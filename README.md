@@ -63,3 +63,12 @@ Alerts will be delivered only once per minute to avoid spam you.
 Will show you a list of your current alerts sorted by price from more to less.
 
 Under each price you will have a remove button to cancel the alert at that price.
+
+## Future implementations
+
+* Add command `/add` will not require parameters, when sended will ask step by step the values
+* Add binance exchange
+* Add support for Bybit Spot and inverse futures
+* Add discord bot
+* Add sqlite for storing current state and restore it after restart (all the processes works on memory)
+* Add docker container

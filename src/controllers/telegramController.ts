@@ -162,6 +162,9 @@ Create a new alert
 Remove your alert by symbol/price
     /remove BTCUSD 45000
 
+List of your current alerts
+    /list
+
 This help
     /help
 
