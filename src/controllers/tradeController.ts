@@ -1,12 +1,14 @@
-import { getUsersAlertsBySymbol, savePrice, getPrice } from "../store";
-import { TradeType, UserStore } from "../types";
-import telegramBot from "./telegramController";
+import symbolModel from "../models/symbolModel";
+import userModel from "../models/userModel";
+import telegramBot from "../services/bots/TelegramBot";
+import Exchange from "../services/exchanges/Exchange";
+import { TTrade, UserStore } from "../types";
 
-export const onTrade = (data: TradeType, exchange: string) => {
-  const previousPrice = getPrice(data.symbol);
-  savePrice(data.symbol, data.price);
+export const onTrade = (data: TTrade, exchange: Exchange) => {
+  const previousPrice = symbolModel.getPrice(exchange.name, data.symbol);
+  symbolModel.savePrice(exchange.name, data.symbol, data.price);
 
-  const userAlerts = getUsersAlertsBySymbol(data.symbol);
+  const userAlerts = userModel.getUsersAlertsBySymbol(data.symbol);
 
   userAlerts.forEach((userAlert: UserStore) => {
     const priceDirectionUp = previousPrice < data.price;

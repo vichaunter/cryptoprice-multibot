@@ -1,0 +1,14 @@
+version: "3.1"
+
+services:
+  cryptobot_production:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: nas.local:5000/vichaunter/cryptoprice-multibot:latest
+    environment:
+      - TELEGRAM_TOKEN=123456789:qwertyuiopasdfghjklñzxcvbnm
+      - ENVIRONMENT=production
+    volumes:
+      - ${PWD}/db_data/production:/app/db_data
+    restart: always

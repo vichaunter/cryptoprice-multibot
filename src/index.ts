@@ -1,12 +1,15 @@
-import path from 'path'
-import dotenv from 'dotenv'
-import init from './services/exchanges/bybitPrices'
-import TelegramBot from './controllers/telegramController'
+import dotenv from "dotenv";
+import path from "path";
+import bots from "./services/bots";
+import exchanges from "./services/exchanges";
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') })
+if (process.env.ENVIRONMENT !== "production") {
+  dotenv.config({ path: path.resolve(__dirname, "../.env") });
+}
+//db default inMemory so not need to initialize
 
 //bots
-TelegramBot.init(process.env.BOT_TOKEN || "")
+bots.telegram.init(process.env.TELEGRAM_TOKEN || "");
 
 //exchanges
-init()
+exchanges.init();

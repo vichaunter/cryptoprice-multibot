@@ -7,13 +7,17 @@
   "author": "VicHaunter",
   "license": "MIT",
   "dependencies": {
+    "@grammyjs/menu": "^1.1.1",
     "bybit-api": "^2.1.8",
     "dotenv": "^10.0.0",
+    "grammy": "^1.8.2",
+    "grammy-inline-menu": "^7.0.2",
     "telegraf": "^4.5.2"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon"
+    "build": "yarn tsc",
+    "dev": "nodemon",
+    "publish:production": "docker-compose -f docker-compose.prod.yml build && docker-compose -f docker-compose.prod.yml push"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
