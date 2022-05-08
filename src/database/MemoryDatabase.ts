@@ -1,3 +1,4 @@
+import fs from "fs";
 import symbols from "../helpers/symbols";
 import { exchangesList } from "../services/exchanges";
 import {
@@ -10,10 +11,35 @@ import {
 } from "../types";
 import IDatabase from "./IDatabase";
 
-const userAlertsStore: Array<UserStore> = [];
-const prices: PriceStore = {};
+let userAlertsStore: Array<UserStore> = [];
+let prices: PriceStore = {};
+
+const dumpToFiles = () => {
+  fs.writeFileSync(
+    "./db_data/userAlerts.json",
+    JSON.stringify(userAlertsStore, null, 4)
+  );
+  fs.writeFileSync("./db_data/prices.json", JSON.stringify(prices, null, 4));
+};
+
+const loadFromFiles = async () => {
+  fs.readFile("./db_data/userAlerts.json", (err, data) => {
+    if (!err) {
+      userAlertsStore = JSON.parse(data.toString());
+    }
+  });
+  fs.readFile("./db_data/prices.json", (err, data) => {
+    if (!err) {
+      prices = JSON.parse(data.toString());
+    }
+  });
+};
 
 class MemoryDatabase implements IDatabase {
+  constructor() {
+    loadFromFiles();
+  }
+
   getUserAlert(
     id: number,
     symbol: string,
@@ -45,6 +71,8 @@ class MemoryDatabase implements IDatabase {
 
   savePrice = (exchange: TExchange, symbol: TSymbol, price: TPrice): void => {
     prices[`${exchange}${symbol}`] = price;
+
+    dumpToFiles();
   };
 
   getPrice = (exchange: TExchange, symbol: TSymbol): TPrice => {
@@ -66,6 +94,7 @@ class MemoryDatabase implements IDatabase {
         alert.price === price
       ) {
         userAlertsStore.splice(i, 1);
+        dumpToFiles();
         return true;
       }
     }
@@ -113,6 +142,7 @@ class MemoryDatabase implements IDatabase {
 
     exchangesList[exchange].restart();
 
+    dumpToFiles();
     // restartBybit();
   };
   getCurrentSymbols = (exchange: TExchange): Array<string> => {
