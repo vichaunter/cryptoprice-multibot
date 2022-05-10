@@ -15,11 +15,12 @@ class BybitExchange implements Exchange {
   currentPrices: { [key: string]: number } = {};
 
   constructor() {
-    this.ws = new WebsocketClient({});
+    this.ws = new WebsocketClient({ livenet: true });
   }
 
   init = () => {
     const currentSymbols = db.getCurrentSymbols(this.name);
+    console.log("starting bybit", currentSymbols);
     const currentTopics = currentSymbols.map((s) => `trade.${s}`);
     if (!currentSymbols.length) return;
 
@@ -35,8 +36,11 @@ class BybitExchange implements Exchange {
       ({ topic, data }: { topic: string; data: TTrade[] }) => {
         if (currentTopics.includes(topic)) {
           data.forEach((trade) => {
-            this.currentPrices[trade.symbol] = trade.price;
-            onTrade(trade, this);
+            const actualPrice = this.currentPrices[trade.symbol];
+            if (actualPrice !== trade.price) {
+              this.currentPrices[trade.symbol] = trade.price;
+              onTrade(trade, this);
+            }
           });
         }
       }

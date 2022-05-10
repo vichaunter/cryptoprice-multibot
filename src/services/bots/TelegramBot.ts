@@ -99,10 +99,10 @@ class TelegramBot extends IBot {
     this.bot = new Bot(token);
     console.log("init bot");
     this.listCommand();
+    this.helpCommand();
     this.addCommand();
     // this.start();
     // this.addListener();
-    // this.help();
     // this.removeListener();
     // this.alertConfiguration()
 
@@ -116,8 +116,6 @@ class TelegramBot extends IBot {
 
   start() {
     if (!this.bot) return this.requireBot();
-
-    console.log(this.bot);
     this.bot.command("start", (ctx) => ctx.reply("I'm ready for alerts!"));
   }
 
@@ -163,7 +161,6 @@ class TelegramBot extends IBot {
     userQueue: queueValueType,
     autoremove: boolean
   ) {
-    console.log("autoRemove", autoremove);
     const userId = ctx.from?.id;
     if (!userId) return;
     userQueue.autoRemove = autoremove;
@@ -205,7 +202,7 @@ class TelegramBot extends IBot {
     this.bot.command("add", async (ctx) => {
       const userId = ctx.from?.id;
       if (!userId) return;
-      console.log("add", queue[userId]);
+      console.log("add");
       if (!queue[userId]) {
         queue[userId] = queueValueDefault;
       }
@@ -228,7 +225,7 @@ class TelegramBot extends IBot {
       await ctx.reply("menu", { reply_markup: ikey });
     });
     this.bot.callbackQuery("UP", (ctx) => {
-      console.log("UP", ctx.update.callback_query.message?.text);
+      console.log("UP");
       ctx.answerCallbackQuery({
         text: "You were curious, indeed!",
       });
@@ -283,7 +280,7 @@ class TelegramBot extends IBot {
     });
 
     this.bot.on("callback_query:data", async (ctx) => {
-      console.log("callback_query:data", ctx.callbackQuery.data);
+      console.log("callback_query:data");
       const userId = ctx.from?.id;
       const userQueue: queueValueType = queue[userId];
       if (!userId || !userQueue) return;
@@ -444,7 +441,6 @@ class TelegramBot extends IBot {
     if (!this.bot) return this.requireBot();
 
     this.bot.command("list", (ctx) => {
-      console.log(ctx);
       if (!ctx.from) return;
       const alerts = userModel.getUserAlerts(ctx.from.id);
 
@@ -457,15 +453,9 @@ class TelegramBot extends IBot {
         .sort((a, b) => b.price - a.price)
         // .map((a) => `${a.symbol} ${a.price} ${a.direction}`)
         .forEach((alert) => {
-          ctx.reply(
-            `${alert.exchange} ${alert.symbol} ${alert.price} ${alert.direction}`,
-            {
-              reply_markup: new InlineKeyboard().text(
-                "Remove",
-                KEY_REMOVE_ALERT
-              ),
-            }
-          );
+          ctx.reply(`${alert.exchange} ${alert.symbol} ${alert.price}`, {
+            reply_markup: new InlineKeyboard().text("Remove", KEY_REMOVE_ALERT),
+          });
         });
     });
 
@@ -502,43 +492,41 @@ class TelegramBot extends IBot {
     // });
   }
 
-  //   help() {
-  //     if (!this.bot) return this.requireBot();
+  helpCommand() {
+    if (!this.bot) return this.requireBot();
 
-  //     this.bot.command("help", (ctx) => {
-  //       const help = `
-  // It's dangerous to go alone, take one of this:
+    this.bot.command("help", (ctx) => {
+      const help = `
+It's dangerous to go alone, take one of this:
+- /add => Create a new alert 
+- /list   => List all your current alerts (also for removing)
+- /help => This help    
+`;
+      ctx.reply(help);
+    });
+  }
 
-  // Create a new alert
-  //     /add BTCUSD 45000 up|down? rm?
+  sendAlert(data: UserStore, exchange: TExchange) {
+    if (!this.bot) return this.requireBot();
 
-  // Remove your alert by symbol/price
-  //     /remove BTCUSD 45000
+    if (data.remove) {
+      userModel.removeAlert(data.userId, exchange, data.symbol, data.price);
+    }
 
-  // List of your current alerts
-  //     /list
+    data.lastAlert = Date.now() / 1000;
 
-  // This help
-  //     /help
+    const str = `${data.symbol} crossed ${data.price} on ${exchange}`;
+    this.bot.api.sendMessage(data.chatId, str);
 
-  // * with ? optional parameters
-  //         `;
-  //       ctx.reply(help);
-  //     });
-  //   }
+    // if (data.remove) {
+    //   removeAlert(data.userId, data.symbol, data.price);
+    // }
 
-  //   sendAlert(data: UserStore, exchange: Exchange) {
-  //     if (!this.bot) return this.requireBot();
+    // data.lastAlert = Date.now() / 1000;
 
-  //     if (data.remove) {
-  //       removeAlert(data.userId, data.symbol, data.price);
-  //     }
-
-  //     data.lastAlert = Date.now() / 1000;
-
-  //     const str = `${data.symbol} crossed ${data.price} on ${exchange}`;
-  //     this.bot.telegram.sendMessage(data.chatId, str);
-  //   }
+    // const str = `${data.symbol} crossed ${data.price} on ${exchange}`;
+    // this.bot.telegram.sendMessage(data.chatId, str);
+  }
 }
 
 const telegramBot = new TelegramBot();

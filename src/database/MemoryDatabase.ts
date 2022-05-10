@@ -23,21 +23,20 @@ const dumpToFiles = () => {
 };
 
 const loadFromFiles = async () => {
-  fs.readFile("./db_data/userAlerts.json", (err, data) => {
-    if (!err) {
-      userAlertsStore = JSON.parse(data.toString());
-    }
-  });
-  fs.readFile("./db_data/prices.json", (err, data) => {
-    if (!err) {
-      prices = JSON.parse(data.toString());
-    }
-  });
+  const alertsData = fs.readFileSync("./db_data/userAlerts.json");
+  if (alertsData) {
+    userAlertsStore = JSON.parse(alertsData.toString());
+  }
+  const pricesData = fs.readFileSync("./db_data/prices.json");
+  if (pricesData) {
+    prices = JSON.parse(pricesData.toString());
+  }
 };
 
 class MemoryDatabase implements IDatabase {
   constructor() {
     loadFromFiles();
+    console.log("inMemory database initialized");
   }
 
   getUserAlert(
@@ -146,6 +145,7 @@ class MemoryDatabase implements IDatabase {
     // restartBybit();
   };
   getCurrentSymbols = (exchange: TExchange): Array<string> => {
+    console.log(userAlertsStore);
     return [
       ...new Set(
         userAlertsStore

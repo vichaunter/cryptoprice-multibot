@@ -1,5 +1,4 @@
-import { UserStore } from "../../types";
-import Exchange from "../exchanges/Exchange";
+import { TExchange, UserStore } from "../../types";
 
 class IBot {
   bot: any | undefined;
@@ -36,7 +35,7 @@ class IBot {
     throw Error("help not implemented");
   }
 
-  sendAlert(data: UserStore, exchange: Exchange) {
+  sendAlert(data: UserStore, exchange: TExchange) {
     throw Error("sendAlert not implemented");
   }
 }
