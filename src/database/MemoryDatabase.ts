@@ -1,4 +1,5 @@
 import fs from "fs";
+import _ from "lodash";
 import symbols from "../helpers/symbols";
 import { exchangesList } from "../services/exchanges";
 import {
@@ -11,8 +12,17 @@ import {
 } from "../types";
 import IDatabase from "./IDatabase";
 
-let userAlertsStore: Array<UserStore> = [];
+type TUserAlertStore = {
+  [key: string]: Array<UserStore>;
+};
+
+type TCurrentSymbols = {
+  [key in TExchange]: TSymbol[];
+};
+
+let userAlertsStore: TUserAlertStore = {};
 let prices: PriceStore = {};
+let currentSymbols: TCurrentSymbols;
 
 const dumpToFiles = () => {
   fs.writeFileSync(
@@ -44,7 +54,7 @@ class MemoryDatabase implements IDatabase {
     symbol: string,
     price: number
   ): UserStore | undefined {
-    return userAlertsStore.find(
+    return userAlertsStore[id]?.find(
       (o) => o.userId === id && o.symbol === symbol && o.price === price
     );
   }
@@ -53,19 +63,26 @@ class MemoryDatabase implements IDatabase {
     id: number,
     symbol: string
   ): UserStore | undefined => {
-    return userAlertsStore.find((o) => o.userId === id && o.symbol === symbol);
+    return userAlertsStore[id]?.find(
+      (o) => o.userId === id && o.symbol === symbol
+    );
   };
 
   getUserAlerts = (id: number) => {
-    return userAlertsStore.filter((o) => o.userId === id);
+    return userAlertsStore[id] || [];
   };
 
   getUsersAlertsBySymbol = (symbol: string): Array<UserStore> => {
-    return userAlertsStore.filter((o) => o.symbol === symbol);
+    const symbols: Set<UserStore> = new Set();
+    _.flatMap(userAlertsStore).find((item) => item.symbol === symbol);
+
+    return Array.from(symbols);
   };
 
   getUserAlertBySymbol(id: number, symbol: string): UserStore | undefined {
-    return userAlertsStore.find((o) => o.userId === id && o.symbol === symbol);
+    return userAlertsStore[id]?.find(
+      (o) => o.userId === id && o.symbol === symbol
+    );
   }
 
   savePrice = (exchange: TExchange, symbol: TSymbol, price: TPrice): void => {
@@ -78,21 +95,40 @@ class MemoryDatabase implements IDatabase {
     return prices[`${exchange}${symbol}`];
   };
 
+  saveSymbol = (exchange: TExchange, symbol: TSymbol): void => {
+    if (!currentSymbols[exchange]) {
+      currentSymbols[exchange] = [symbol];
+    } else {
+      currentSymbols[exchange].push(symbol);
+    }
+    dumpToFiles();
+  };
+
+  removeSymbol = (exchange: TExchange, symbol: TSymbol): void => {
+    if (currentSymbols[exchange]) {
+      const cleanList = new Set(currentSymbols[exchange]);
+      cleanList.delete(symbol);
+      currentSymbols[exchange] = Array.from(cleanList);
+      dumpToFiles();
+    }
+  };
+
   removeAlert = (
     userId: number,
     exchange: TExchange,
     symbol: TSymbol,
     price: number
   ): boolean => {
-    for (var i = userAlertsStore.length - 1; i >= 0; --i) {
-      const alert = userAlertsStore[i];
+    for (var i = userAlertsStore[userId].length - 1; i >= 0; --i) {
+      const alert = userAlertsStore[userId][i];
       if (
         alert.userId === userId &&
         alert.exchange === exchange &&
         alert.symbol === symbol &&
         alert.price === price
       ) {
-        userAlertsStore.splice(i, 1);
+        userAlertsStore[userId].splice(i, 1);
+        //TODO: maybe delete symbol from storage if is last one
         dumpToFiles();
         return true;
       }
@@ -136,23 +172,18 @@ class MemoryDatabase implements IDatabase {
       userAlert.price = newUserAlert.price;
       userAlert.direction = newUserAlert.direction;
     } else {
-      userAlertsStore.push(newUserAlert);
+      userAlertsStore[userId].push(newUserAlert);
     }
 
     exchangesList[exchange].restart();
+    this.saveSymbol(exchange, symbol);
 
     dumpToFiles();
     // restartBybit();
   };
+
   getCurrentSymbols = (exchange: TExchange): Array<string> => {
-    console.log(userAlertsStore);
-    return [
-      ...new Set(
-        userAlertsStore
-          .filter((us) => us.exchange === exchange)
-          .map((us) => us.symbol)
-      ),
-    ];
+    return currentSymbols[exchange];
   };
 }
 
